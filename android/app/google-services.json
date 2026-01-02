@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "156127534222",
+    "project_id": "pdf-sign-520db",
+    "storage_bucket": "pdf-sign-520db.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:156127534222:android:d2576637103cb66fcdfddf",
+        "android_client_info": {
+          "package_name": "com.example.assessment"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC74GvIPEL3rSdLuJ8i-sNAGfhlcUg7fg8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
