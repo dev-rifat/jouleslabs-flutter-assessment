@@ -10,11 +10,12 @@ abstract class DocumentEditorEvent extends Equatable {
 class AddField extends DocumentEditorEvent {
   final FieldType type;
   final Offset position;
+  final String? value;
 
-  const AddField(this.type, this.position);
+  const AddField(this.type, this.position, {this.value});
 
   @override
-  List<Object?> get props => [type, position];
+  List<Object?> get props => [type, position, value];
 }
 
 class UpdateFieldPosition extends DocumentEditorEvent {

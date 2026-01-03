@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
@@ -6,8 +7,9 @@ import 'package:assessment/features/document/presentation/bloc/document_editor_b
 import 'package:assessment/features/document/domain/models/document_field.dart';
 import 'package:assessment/features/document/presentation/widgets/draggable_field.dart';
 import 'package:assessment/features/document/domain/services/pdf_service.dart';
+import 'package:assessment/features/document/presentation/screens/my_signatures_screen.dart';
 import 'package:printing/printing.dart';
-import 'package:signature/signature.dart';
+import 'package:path_provider/path_provider.dart';
 
 class DocumentEditorScreen extends StatefulWidget {
   final File file;
@@ -20,6 +22,7 @@ class DocumentEditorScreen extends StatefulWidget {
 
 class _DocumentEditorScreenState extends State<DocumentEditorScreen> {
   final GlobalKey<SfPdfViewerState> _pdfViewerKey = GlobalKey();
+  final GlobalKey _stackKey = GlobalKey();
 
   @override
   Widget build(BuildContext context) {
@@ -33,165 +36,238 @@ class _DocumentEditorScreenState extends State<DocumentEditorScreen> {
             );
           }
         },
-        child: Scaffold(
-          appBar: AppBar(
-            title: const Text('Document Editor'),
-            actions: [
-              _BuildAppBarActions(file: widget.file),
-            ],
-          ),
-          body: Column(
-            children: [
-              Expanded(
-                child: BlocBuilder<DocumentEditorBloc, DocumentEditorState>(
-                  builder: (context, state) {
-                    return Stack(
-                      children: [
-                        SfPdfViewer.file(
-                          widget.file,
-                          key: _pdfViewerKey,
-                        ),
-                        ...state.fields.map((field) {
-                          return DraggableField(
-                            field: field,
-                            isLocked: state.status != DocumentStatus.editing,
-                            onPositionChanged: (offset) {
-                              final RenderBox renderBox = context.findRenderObject() as RenderBox;
-                              final localOffset = renderBox.globalToLocal(offset);
-                              context.read<DocumentEditorBloc>().add(
-                                    UpdateFieldPosition(field.id, localOffset),
-                                  );
-                            },
-                            onTap: () {
-                              if (state.status == DocumentStatus.published) {
-                                _showFillDialog(context, field);
-                              }
-                            },
-                          );
-                        }),
-                      ],
-                    );
-                  },
+        child: Builder(
+          builder: (context) {
+            return Scaffold(
+              backgroundColor: const Color(0xFFF5F5F5),
+              appBar: AppBar(
+                backgroundColor: Colors.white,
+                elevation: 0.5,
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.black),
+                  onPressed: () => Navigator.pop(context),
                 ),
+                title: Text(
+                  widget.file.path.split('/').last,
+                  style: const TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.w500),
+                ),
+                actions: [
+                  _BuildAppBarActions(file: widget.file),
+                ],
               ),
-              BlocBuilder<DocumentEditorBloc, DocumentEditorState>(
-                builder: (context, state) {
-                  if (state.status == DocumentStatus.editing) {
-                    return _buildEditorToolbar(context);
-                  }
-                  return const SizedBox.shrink();
-                },
+              body: Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    color: Colors.white,
+                    child: const Row(
+                      children: [
+                        Text('1 / 1 Pages', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                        Spacer(),
+                        Icon(Icons.more_vert, color: Colors.grey, size: 20),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: BlocBuilder<DocumentEditorBloc, DocumentEditorState>(
+                      builder: (context, state) {
+                        return Stack(
+                          key: _stackKey,
+                          children: [
+                            SfPdfViewer.file(
+                              widget.file,
+                              key: _pdfViewerKey,
+                            ),
+                            ...state.fields.map((field) {
+                              return DraggableField(
+                                field: field,
+                                isLocked: state.status != DocumentStatus.editing,
+                                onPositionChanged: (newPosition) {
+                                  context.read<DocumentEditorBloc>().add(
+                                        UpdateFieldPosition(field.id, newPosition),
+                                      );
+                                },
+                                onTap: () async {
+                                  if (state.status == DocumentStatus.editing) {
+                                    if (field.type == FieldType.signature && field.value == null) {
+                                      _pickSignatureForField(context, field.id);
+                                    } else if (field.type == FieldType.text && field.value == 'Enter Text') {
+                                       _showTextPrompt(context, fieldId: field.id);
+                                    } else {
+                                      _showEditDeleteDialog(context, field);
+                                    }
+                                  }
+                                },
+                              );
+                            }),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                  _buildModernToolbar(context),
+                ],
               ),
-            ],
-          ),
+            );
+          }
         ),
       ),
     );
   }
 
-  Widget _buildEditorToolbar(BuildContext context) {
+  Widget _buildModernToolbar(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      color: Colors.white,
+      padding: const EdgeInsets.only(top: 12, bottom: 24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -5),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _modernToolbarItem(context, Icons.edit_outlined, 'Signature', () {
+            context.read<DocumentEditorBloc>().add(
+              const AddField(FieldType.signature, Offset(150, 400), value: null),
+            );
+          }),
+          _modernToolbarItem(context, Icons.info_outline, 'Initial', () {
+             context.read<DocumentEditorBloc>().add(
+              const AddField(FieldType.signature, Offset(100, 400), value: null),
+            );
+          }),
+          _modernToolbarItem(context, Icons.text_fields_outlined, 'Text Box', () {
+             context.read<DocumentEditorBloc>().add(
+              const AddField(FieldType.text, Offset(100, 300), value: 'Enter Text'),
+            );
+          }),
+          _modernToolbarItem(context, Icons.radio_button_checked, 'Radio', () {
+            context.read<DocumentEditorBloc>().add(
+              const AddField(FieldType.checkbox, Offset(150, 300), value: 'false'),
+            );
+          }),
+          _modernToolbarItem(context, Icons.calendar_today_outlined, 'Date', () async {
+            final date = await showDatePicker(
+              context: context,
+              initialDate: DateTime.now(),
+              firstDate: DateTime(2000),
+              lastDate: DateTime(2100),
+            );
+            if (date != null && context.mounted) {
+              context.read<DocumentEditorBloc>().add(
+                AddField(FieldType.date, const Offset(150, 200), value: date.toIso8601String().split('T')[0]),
+              );
+            }
+          }),
+          _modernToolbarItem(context, Icons.menu, 'Stamp', () {}),
+        ],
+      ),
+    );
+  }
+
+  Widget _modernToolbarItem(BuildContext context, IconData icon, String label, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _toolbarItem(context, Icons.edit_note, FieldType.signature, 'Sign'),
-              _toolbarItem(context, Icons.text_fields, FieldType.text, 'Text'),
-              _toolbarItem(context, Icons.check_box, FieldType.checkbox, 'Check'),
-              _toolbarItem(context, Icons.calendar_today, FieldType.date, 'Date'),
-            ],
-          ),
-          const Divider(),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              TextButton.icon(
-                onPressed: () => context.read<DocumentEditorBloc>().add(ExportFields()),
-                icon: const Icon(Icons.download),
-                label: const Text('Export JSON'),
-              ),
-              TextButton.icon(
-                onPressed: () => _showImportDialog(context),
-                icon: const Icon(Icons.upload),
-                label: const Text('Import JSON'),
-              ),
-            ],
+          Icon(icon, color: const Color(0xFF1E4D92), size: 24),
+          const SizedBox(height: 6),
+          Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.w400)),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _pickSignatureForField(BuildContext context, String fieldId) async {
+    final signatureData = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(builder: (context) => const MySignaturesScreen()),
+    );
+    if (signatureData != null && context.mounted) {
+      context.read<DocumentEditorBloc>().add(UpdateFieldValue(fieldId, signatureData));
+    }
+  }
+
+  void _showTextPrompt(BuildContext context, {String? fieldId}) {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(fieldId == null ? 'Add Text Box' : 'Edit Text'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(hintText: 'Enter text...'),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () {
+              if (controller.text.isNotEmpty) {
+                if (fieldId != null) {
+                  context.read<DocumentEditorBloc>().add(UpdateFieldValue(fieldId, controller.text));
+                } else {
+                  context.read<DocumentEditorBloc>().add(
+                    AddField(FieldType.text, const Offset(100, 350), value: controller.text),
+                  );
+                }
+              }
+              Navigator.pop(dialogContext);
+            },
+            child: const Text('OK'),
           ),
         ],
       ),
     );
   }
 
-  Widget _toolbarItem(BuildContext context, IconData icon, FieldType type, String label) {
-    return InkWell(
-      onTap: () {
-        context.read<DocumentEditorBloc>().add(
-              AddField(type, const Offset(50, 100)),
-            );
-      },
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: Theme.of(context).primaryColor),
-            Text(label, style: const TextStyle(fontSize: 12)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showFillDialog(BuildContext context, DocumentField field) {
+  void _showEditDeleteDialog(BuildContext context, DocumentField field) {
     showDialog(
       context: context,
       builder: (dialogContext) {
+        final textController = TextEditingController(text: field.value);
         return AlertDialog(
-          title: Text('Fill ${field.type.name}'),
-          content: _FillFieldWidget(
-            field: field,
-            onChanged: (val) {
-              context.read<DocumentEditorBloc>().add(UpdateFieldValue(field.id, val));
-            },
+          title: Text('Edit ${field.type.name}'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (field.type == FieldType.text)
+                TextField(controller: textController, autofocus: true),
+              if (field.type == FieldType.checkbox)
+                const Text('Toggle checkbox?'),
+              if (field.type == FieldType.signature)
+                const Text('Choose a new signature or delete this one.'),
+            ],
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Close'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _showImportDialog(BuildContext context) {
-    final controller = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Import Field JSON'),
-          content: TextField(
-            controller: controller,
-            maxLines: 5,
-            decoration: const InputDecoration(hintText: 'Paste JSON here...'),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
               onPressed: () {
-                context.read<DocumentEditorBloc>().add(ImportFields(controller.text));
+                context.read<DocumentEditorBloc>().add(RemoveField(field.id));
                 Navigator.pop(dialogContext);
               },
-              child: const Text('Import'),
+              child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            ),
+            const Spacer(),
+            TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancel')),
+            ElevatedButton(
+              onPressed: () async {
+                if (field.type == FieldType.signature) {
+                  _pickSignatureForField(context, field.id);
+                } else if (field.type == FieldType.checkbox) {
+                   final newVal = field.value == 'true' ? 'false' : 'true';
+                   context.read<DocumentEditorBloc>().add(UpdateFieldValue(field.id, newVal));
+                } else {
+                  context.read<DocumentEditorBloc>().add(UpdateFieldValue(field.id, textController.text));
+                }
+                Navigator.pop(dialogContext);
+              },
+              child: const Text('Update'),
             ),
           ],
         );
@@ -208,122 +284,29 @@ class _BuildAppBarActions extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<DocumentEditorBloc, DocumentEditorState>(
       builder: (context, state) {
-        if (state.status == DocumentStatus.editing) {
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0),
-            child: ElevatedButton(
-              onPressed: () => context.read<DocumentEditorBloc>().add(PublishDocument()),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-              ),
-              child: const Text('Publish'),
-            ),
-          );
-        } else {
-          return IconButton(
-            icon: const Icon(Icons.picture_as_pdf),
-            onPressed: () async {
+        return TextButton(
+          onPressed: () async {
+            if (state.status == DocumentStatus.editing) {
               final signedFile = await PdfService.generateSignedPdf(file, state.fields);
+              final directory = await getApplicationDocumentsDirectory();
+              final fileName = 'final_doc_${DateTime.now().millisecondsSinceEpoch}.pdf';
+              final savedFile = await signedFile.copy('${directory.path}/$fileName');
               if (context.mounted) {
-                await Printing.layoutPdf(
-                  onLayout: (format) => signedFile.readAsBytes(),
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Saved: ${savedFile.path}'),
+                    action: SnackBarAction(label: 'Open', onPressed: () => Printing.layoutPdf(onLayout: (_) => savedFile.readAsBytes())),
+                  ),
                 );
               }
-            },
-          );
-        }
-      },
-    );
-  }
-}
-
-class _FillFieldWidget extends StatefulWidget {
-  final DocumentField field;
-  final ValueChanged<String> onChanged;
-
-  const _FillFieldWidget({required this.field, required this.onChanged});
-
-  @override
-  State<_FillFieldWidget> createState() => _FillFieldWidgetState();
-}
-
-class _FillFieldWidgetState extends State<_FillFieldWidget> {
-  late SignatureController _signatureController;
-
-  @override
-  void initState() {
-    super.initState();
-    if (widget.field.type == FieldType.signature) {
-      _signatureController = SignatureController(
-        penStrokeWidth: 3,
-        penColor: Colors.black,
-      );
-    }
-  }
-
-  @override
-  void dispose() {
-    if (widget.field.type == FieldType.signature) {
-      _signatureController.dispose();
-    }
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    switch (widget.field.type) {
-      case FieldType.text:
-        return TextField(
-          onChanged: widget.onChanged,
-          decoration: const InputDecoration(hintText: 'Type something...'),
-        );
-      case FieldType.checkbox:
-        return Row(
-          children: [
-            const Text('Check this field: '),
-            Checkbox(
-              value: widget.field.value == 'true',
-              onChanged: (val) => widget.onChanged(val.toString()),
-            ),
-          ],
-        );
-      case FieldType.date:
-        return ElevatedButton(
-          onPressed: () async {
-            final date = await showDatePicker(
-              context: context,
-              initialDate: DateTime.now(),
-              firstDate: DateTime(2000),
-              lastDate: DateTime(2100),
-            );
-            if (date != null) {
-              widget.onChanged(date.toIso8601String().split('T')[0]);
             }
           },
-          child: Text(widget.field.value ?? 'Pick Date'),
+          child: const Text(
+            'Continue',
+            style: TextStyle(color: Color(0xFF1E4D92), fontWeight: FontWeight.bold, fontSize: 16),
+          ),
         );
-      case FieldType.signature:
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Signature(
-              controller: _signatureController,
-              height: 150,
-              backgroundColor: Colors.grey[200]!,
-            ),
-            TextButton(
-              onPressed: () async {
-                final export = await _signatureController.toPngBytes();
-                if (export != null) {
-                  widget.onChanged('Signature Captured');
-                }
-              },
-              child: const Text('Capture Signature'),
-            ),
-          ],
-        );
-    }
+      },
+    );
   }
 }

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:assessment/features/document/domain/models/document_field.dart';
 
@@ -21,83 +22,75 @@ class DraggableField extends StatelessWidget {
       width: field.width,
       height: field.height,
       decoration: BoxDecoration(
-        color: _getFieldColor().withOpacity(0.3),
-        border: Border.all(color: _getFieldColor(), width: 2),
+        color: _getFieldColor().withOpacity(0.1),
+        border: Border.all(
+          color: isLocked ? Colors.transparent : _getFieldColor().withOpacity(0.5),
+          width: 2,
+        ),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(_getFieldIcon(), size: 20, color: _getFieldColor()),
-            Text(
-              field.type.name.toUpperCase(),
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-                color: _getFieldColor(),
-              ),
-            ),
-          ],
-        ),
+        child: _buildFieldContent(),
       ),
     );
-
-    if (isLocked) {
-      return Positioned(
-        left: field.x,
-        top: field.y,
-        child: GestureDetector(
-          onTap: onTap,
-          child: content,
-        ),
-      );
-    }
 
     return Positioned(
       left: field.x,
       top: field.y,
       child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onPanUpdate: isLocked ? null : (details) {
+          onPositionChanged(Offset(field.x + details.delta.dx, field.y + details.delta.dy));
+        },
         onTap: onTap,
-        child: Draggable(
-          feedback: Material(
-            color: Colors.transparent,
-            child: content,
-          ),
-          childWhenDragging: Opacity(opacity: 0.5, child: content),
-          onDragEnd: (details) {
-            // Adjust for local position if needed
-            onPositionChanged(details.offset);
-          },
-          child: content,
+        child: content,
+      ),
+    );
+  }
+
+  Widget _buildFieldContent() {
+    if (field.type == FieldType.signature && field.value != null && field.value!.length > 100) {
+      try {
+        return Image.memory(
+          base64Decode(field.value!),
+          fit: BoxFit.contain,
+          key: ValueKey('sig_${field.id}_${field.value.hashCode}'),
+        );
+      } catch (e) {
+        return const Icon(Icons.error);
+      }
+    }
+
+    if (field.type == FieldType.checkbox) {
+      return Icon(
+        field.value == 'true' ? Icons.check_box : Icons.check_box_outline_blank,
+        color: _getFieldColor(),
+        size: 32,
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      child: Text(
+        field.value ?? field.type.name.toUpperCase(),
+        style: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.bold,
+          color: _getFieldColor(),
         ),
+        textAlign: TextAlign.center,
+        overflow: TextOverflow.ellipsis,
+        maxLines: 2,
       ),
     );
   }
 
   Color _getFieldColor() {
     switch (field.type) {
-      case FieldType.signature:
-        return Colors.blue;
-      case FieldType.text:
-        return Colors.green;
-      case FieldType.checkbox:
-        return Colors.orange;
-      case FieldType.date:
-        return Colors.purple;
-    }
-  }
-
-  IconData _getFieldIcon() {
-    switch (field.type) {
-      case FieldType.signature:
-        return Icons.edit_note;
-      case FieldType.text:
-        return Icons.text_fields;
-      case FieldType.checkbox:
-        return Icons.check_box;
-      case FieldType.date:
-        return Icons.calendar_today;
+      case FieldType.signature: return Colors.blue;
+      case FieldType.text: return Colors.black;
+      case FieldType.checkbox: return Colors.blue.shade800;
+      case FieldType.date: return Colors.purple;
     }
   }
 }

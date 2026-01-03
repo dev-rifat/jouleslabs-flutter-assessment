@@ -27,6 +27,7 @@ class DocumentEditorBloc extends Bloc<DocumentEditorEvent, DocumentEditorState> 
       type: event.type,
       x: event.position.dx,
       y: event.position.dy,
+      value: event.value,
     );
     emit(state.copyWith(fields: List.from(state.fields)..add(newField)));
   }
@@ -55,7 +56,6 @@ class DocumentEditorBloc extends Bloc<DocumentEditorEvent, DocumentEditorState> 
   void _onExportFields(ExportFields event, Emitter<DocumentEditorState> emit) {
     final jsonFields = state.fields.map((f) => f.toJson()).toList();
     final jsonString = jsonEncode({'fields': jsonFields});
-    // In a real app, we might trigger a save file dialog or share
     print('Exported JSON: $jsonString');
   }
 
