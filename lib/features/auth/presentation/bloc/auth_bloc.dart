@@ -34,7 +34,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         email: event.email,
         password: event.password,
       );
+
+      print("_onLoggedIn: $userCredential");
+
       emit(Authenticated(userCredential.user?.email ?? ''));
+
     } on FirebaseAuthException catch (e) {
       emit(AuthFailure(e.message ?? 'Authentication failed'));
     } catch (e) {

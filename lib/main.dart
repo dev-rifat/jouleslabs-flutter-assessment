@@ -2,10 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:assessment/features/auth/presentation/bloc/auth_bloc.dart';
-import 'package:assessment/features/auth/presentation/screens/login_screen.dart';
-import 'package:assessment/features/home/presentation/screens/home_screen.dart';
-import 'package:assessment/core/theme/app_theme.dart';
-
+import 'core/routes/app_page.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -25,17 +22,10 @@ class MyApp extends StatelessWidget {
           create: (context) => AuthBloc()..add(AuthCheckRequested()),
         ),
       ],
-      child: MaterialApp(
+      child: MaterialApp.router(
         title: 'e-Signature App',
-        theme: AppTheme.lightTheme,
-        home: BlocBuilder<AuthBloc, AuthState>(
-          builder: (context, state) {
-            if (state is Authenticated) {
-              return const HomeScreen();
-            }
-            return const LoginScreen();
-          },
-        ),
+        debugShowCheckedModeBanner: false,
+        routerConfig: appRouter,
       ),
     );
   }

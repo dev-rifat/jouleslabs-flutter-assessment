@@ -50,6 +50,12 @@ class HomeScreen extends StatelessWidget {
               style: TextStyle(fontSize: 18, color: Colors.grey),
             ),
             const SizedBox(height: 24),
+            
+            Container(
+              height: 40,
+              color: Colors.white,
+              child: Text("Add documats"),
+            ),
             ElevatedButton.icon(
               onPressed: () => _pickDocument(context),
               icon: const Icon(Icons.upload_file),
