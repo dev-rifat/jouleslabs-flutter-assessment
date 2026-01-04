@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:assessment/core/utils/app_color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
@@ -38,10 +39,9 @@ class _DocumentEditorScreenState extends State<DocumentEditorScreen> {
         child: Builder(
           builder: (context) {
             return Scaffold(
-              backgroundColor: const Color(0xFFF5F5F5),
+              backgroundColor: AppColor.backgroundColor,
               appBar: AppBar(
-                backgroundColor: Colors.white,
-                elevation: 0.5,
+                backgroundColor: AppColor.backgroundColor,
                 leading: IconButton(
                   icon: const Icon(Icons.arrow_back, color: Colors.black),
                   onPressed: () => Navigator.pop(context),

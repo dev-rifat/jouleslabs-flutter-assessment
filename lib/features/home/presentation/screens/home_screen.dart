@@ -1,3 +1,4 @@
+import 'package:assessment/core/utils/app_color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:file_picker/file_picker.dart';
@@ -30,7 +31,10 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColor.backgroundColor,
       appBar: AppBar(
+        backgroundColor: AppColor.backgroundColor,
+
         title: const Text('My Documents'),
         actions: [
           IconButton(
@@ -50,18 +54,18 @@ class HomeScreen extends StatelessWidget {
               style: TextStyle(fontSize: 18, color: Colors.grey),
             ),
             const SizedBox(height: 24),
-            
-            Container(
-              height: 40,
-              color: Colors.white,
-              child: Text("Add documats"),
-            ),
+
             ElevatedButton.icon(
               onPressed: () => _pickDocument(context),
-              icon: const Icon(Icons.upload_file),
-              label: const Text('Upload Document'),
+
+              icon: const Icon(Icons.add, color: AppColor.normalTextColor),
+              label: Text(
+                'Add Document',
+                style: TextStyle(color: AppColor.normalTextColor),
+              ),
               style: ElevatedButton.styleFrom(
                 minimumSize: const Size(200, 50),
+                backgroundColor: AppColor.backgroundColor,
               ),
             ),
           ],
