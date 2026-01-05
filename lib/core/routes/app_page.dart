@@ -1,6 +1,7 @@
 // lib/core/routes/app_router.dart
 import 'package:go_router/go_router.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
+import '../../features/document/presentation/screens/documets/ducument_editors.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
 import '../../features/starting/view/splash_screen.dart';
 import 'app_route.dart';
