@@ -4,6 +4,8 @@ import 'dart:nativewrappers/_internal/vm/lib/typed_data_patch.dart';
 import 'dart:ui';
 import '../../../../core/enums/file_type_pdf.dart';
 
+// ================= FIELD MODEL =================
+
 class PdfField {
   PdfField({
     required this.type,

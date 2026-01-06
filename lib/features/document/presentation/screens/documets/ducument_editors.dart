@@ -7,6 +7,7 @@ import 'package:signature/signature.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 import '../../../../../core/enums/file_type_pdf.dart';
+import 'generate_file_view.dart';
 
 
 class HomeScreen extends StatefulWidget {
@@ -214,16 +215,30 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     }
 
+
     // Save PDF
     final dir = await getApplicationDocumentsDirectory();
-    final file = File('${dir.path}/signed_${DateTime.now().millisecondsSinceEpoch}.pdf');
+    final file = File(
+      '${dir.path}/signed_${DateTime.now().millisecondsSinceEpoch}.pdf',
+    );
     await file.writeAsBytes(await document.save());
     document.dispose();
 
+// 👉 Navigate to generated pdf page
+    if (!mounted) return;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => GeneratedPdfScreen(pdfFile: file),
+      ),
+    );
+
+// Clear editor
     setState(() {
-      generatedPdf = file;
       fields.clear();
     });
+
   }
 
 
