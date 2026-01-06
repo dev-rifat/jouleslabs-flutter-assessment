@@ -83,17 +83,18 @@ class _DocumentsListState extends State<DocumentsList> {
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('Delete Document'),
+        backgroundColor: AppColor.backgroundColor,
         content: const Text('Are you sure you want to delete this document?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child:  Text('Cancel',style: TextStyle(color: AppColor.normalTextColor),),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             child: const Text(
               'Delete',
-              style: TextStyle(color: Colors.red),
+              style: TextStyle(color: AppColor.errorColor),
             ),
           ),
         ],
