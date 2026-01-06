@@ -13,7 +13,8 @@ class AuthLoading extends AuthState {}
 
 class Authenticated extends AuthState {
   final String email;
-  const Authenticated(this.email);
+  final String token;
+  const Authenticated(this.email,this.token);
 
   @override
   List<Object> get props => [email];

@@ -1,11 +1,4 @@
-import 'package:assessment/core/utils/app_color.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:assessment/features/auth/presentation/bloc/auth_bloc.dart';
-import 'package:go_router/go_router.dart';
-import '../../../../core/routes/app_route.dart';
-import '../../../../core/widgets/app_input_field.dart';
-import '../../../../core/widgets/custom_app_button.dart';
+import '/features/auth/auth_exports.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -75,13 +68,17 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (state is Authenticated) {
       context.go(AppRoute.homeScreen);
+      GetStorage().write(AppString.ACCESS_TOKEN, state.token);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColor.backgroundColor,
+
       appBar: AppBar(
+        backgroundColor: AppColor.backgroundColor,
         title: Text(_isLogin ? 'Login' : 'Sign Up'),
         centerTitle: true,
       ),
@@ -115,7 +112,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         const SizedBox(height: 24),
         state is AuthLoading
-            ? const CircularProgressIndicator(color: AppColor.primaryColor,)
+            ? const CircularProgressIndicator(color: AppColor.primaryColor)
             : _buildActions(),
       ],
     );
@@ -142,4 +139,6 @@ class _LoginScreenState extends State<LoginScreen> {
       ],
     );
   }
+
+
 }

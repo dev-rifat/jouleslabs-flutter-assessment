@@ -1,5 +1,6 @@
-// splash_screen.dart
+import 'package:assessment/core/utils/app_string.dart';
 import 'package:flutter/material.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/routes/app_route.dart';
 import '../../../core/utils/app_color.dart';
@@ -12,7 +13,6 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-
   @override
   void initState() {
     super.initState();
@@ -24,17 +24,19 @@ class _SplashScreenState extends State<SplashScreen> {
     await Future.delayed(const Duration(seconds: 2));
 
     if (!mounted) return;
+    if (GetStorage().read(AppString.ACCESS_TOKEN) == null) {
+      /// remove splash from stack
+      context.go(AppRoute.login);
+      return;
+    }
 
-    /// remove splash from stack
-    context.go(AppRoute.login);
+    /// fallback route
+    context.go(AppRoute.homeScreen);
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColor.primaryColor,
-      body: _buildBody(),
-    );
+    return Scaffold(backgroundColor: AppColor.primaryColor, body: _buildBody());
   }
 
   /// Splash UI
@@ -42,23 +44,10 @@ class _SplashScreenState extends State<SplashScreen> {
     return Container(
       width: double.infinity,
       height: double.infinity,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Color(0xFF000000),
-            AppColor.primaryColor,
-          ],
-        ),
-      ),
+      decoration: const BoxDecoration(color: AppColor.backgroundColor),
       child: const Column(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          _SplashTitle(),
-          SizedBox(height: 20),
-          _LoadingIndicator(),
-        ],
+        children: [_SplashTitle(), SizedBox(height: 20), _LoadingIndicator()],
       ),
     );
   }
@@ -71,9 +60,9 @@ class _SplashTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Text(
-      'Splash Screen',
+      'App Splash',
       style: TextStyle(
-        color: AppColor.backgroundColor,
+        color: AppColor.primaryColor,
         fontSize: 26,
         fontWeight: FontWeight.bold,
       ),
@@ -87,8 +76,6 @@ class _LoadingIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CircularProgressIndicator(
-      color: AppColor.backgroundColor,
-    );
+    return CircularProgressIndicator(color: AppColor.primaryColor);
   }
 }

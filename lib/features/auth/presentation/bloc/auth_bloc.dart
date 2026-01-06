@@ -21,7 +21,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       AuthCheckRequested event, Emitter<AuthState> emit) {
     final user = _firebaseAuth.currentUser;
     if (user != null) {
-      emit(Authenticated(user.email ?? ''));
+      emit(Authenticated(user.email ?? '',user.uid));
     } else {
       emit(Unauthenticated());
     }
@@ -35,9 +35,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         password: event.password,
       );
 
-      print("_onLoggedIn: $userCredential");
 
-      emit(Authenticated(userCredential.user?.email ?? ''));
+      emit(Authenticated(userCredential.user?.email ?? '',userCredential.user?.uid ?? ''));
 
     } on FirebaseAuthException catch (e) {
       emit(AuthFailure(e.message ?? 'Authentication failed'));
@@ -53,7 +52,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         email: event.email,
         password: event.password,
       );
-      emit(Authenticated(userCredential.user?.email ?? ''));
+      emit(Authenticated(userCredential.user?.email ?? '',userCredential.user?.uid ?? ''));
     } on FirebaseAuthException catch (e) {
       emit(AuthFailure(e.message ?? 'Registration failed'));
     } catch (e) {
