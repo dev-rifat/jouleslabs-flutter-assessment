@@ -1,23 +1,23 @@
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:assessment/core/utils/app_color.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:signature/signature.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
-import '../../../../../core/enums/file_type_pdf.dart';
+import '../../../../core/enums/file_type_pdf.dart';
 import 'generate_file_view.dart';
 
-
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+class DocumentEditorScreen extends StatefulWidget {
+  final File? initialFile;
+  const DocumentEditorScreen({super.key, this.initialFile});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<DocumentEditorScreen> createState() => _DocumentEditorScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _DocumentEditorScreenState extends State<DocumentEditorScreen> {
   File? originalPdf;
   File? generatedPdf;
 
@@ -25,6 +25,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
   final GlobalKey _pdfKey = GlobalKey();
   final PdfViewerController _pdfController = PdfViewerController();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialFile != null) {
+      originalPdf = widget.initialFile;
+    }
+  }
 
   // ================= PICK PDF =================
   Future<void> pickPdf() async {
@@ -64,8 +72,8 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 10),
             Container(
               height: 200,
-              color: Colors.grey.shade200,
-              child: Signature(controller: controller),
+              color: AppColor.backgroundColor,
+              child: Signature(controller: controller,backgroundColor: AppColor.disableColor,),
             ),
             const SizedBox(height: 10),
             Row(
@@ -73,9 +81,10 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 TextButton(
                   onPressed: controller.clear,
-                  child: const Text("Clear"),
+                  child:  Text("Clear",style: TextStyle(color: AppColor.normalTextColor),),
                 ),
-                ElevatedButton(
+                TextButton(
+
                   onPressed: () async {
                     final img = await controller.toPngBytes();
                     if (img != null) {
@@ -83,7 +92,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     }
                     Navigator.pop(context);
                   },
-                  child: const Text("OK"),
+                  child: const Text("OK",style: TextStyle(color: AppColor.normalTextColor),),
                 ),
               ],
             ),
@@ -140,7 +149,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // ================= GENERATE PDF =================
   // ================= GENERATE PDF =================
   Future<void> generatePdf() async {
     if (originalPdf == null) return;
@@ -216,29 +224,19 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
 
-    // Save PDF
-    final dir = await getApplicationDocumentsDirectory();
-    final file = File(
-      '${dir.path}/signed_${DateTime.now().millisecondsSinceEpoch}.pdf',
-    );
-    await file.writeAsBytes(await document.save());
+    // Get bytes
+    List<int> savedBytes = await document.save();
     document.dispose();
 
-// 👉 Navigate to generated pdf page
+    // Navigate to generated pdf page passing bytes
     if (!mounted) return;
 
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => GeneratedPdfScreen(pdfFile: file),
+        builder: (_) => GeneratedPdfScreen(bytes: Uint8List.fromList(savedBytes)),
       ),
     );
-
-// Clear editor
-    setState(() {
-      fields.clear();
-    });
-
   }
 
 
@@ -246,18 +244,20 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColor.backgroundColor,
       appBar: AppBar(
-        title: const Text("PDF Editor"),
+        backgroundColor: AppColor.backgroundColor,
+
+        title: const Text("Documents editor"),
         actions: [
-          TextButton(onPressed: pickPdf, child: const Text("Add PDF")),
-          TextButton(onPressed: generatePdf, child: const Text("Generate")),
+          TextButton(onPressed: generatePdf, child:  Text("Generate",style: TextStyle(color: AppColor.normalTextColor))),
         ],
       ),
       body: originalPdf == null
           ? Center(
         child: ElevatedButton(
           onPressed: pickPdf,
-          child: const Text("Pick PDF"),
+          child: const Text("+ Add file",style: TextStyle(color: AppColor.normalTextColor)),
         ),
       )
           : Column(
@@ -298,6 +298,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // ================= HELPERS =================
   Widget _addBtn(String title, PdfFieldType type) {
     return TextButton(
+
       onPressed: () {
         setState(() {
           fields.add(
@@ -311,7 +312,7 @@ class _HomeScreenState extends State<HomeScreen> {
           );
         });
       },
-      child: Text(title),
+      child: Text(title,style: TextStyle(color: AppColor.normalTextColor),),
     );
   }
 
@@ -337,7 +338,7 @@ class _HomeScreenState extends State<HomeScreen> {
         alignment: Alignment.center,
         decoration: BoxDecoration(
           border: Border.all(color: Colors.blue),
-          color: Colors.white.withOpacity(0.85),
+          color: Colors.white.withValues(alpha: 0.85),
         ),
         child: _fieldContent(field),
       ),
