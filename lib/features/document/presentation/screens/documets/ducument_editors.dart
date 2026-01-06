@@ -6,7 +6,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:signature/signature.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
-
 import '../../../../../core/enums/file_type_pdf.dart';
 
 
